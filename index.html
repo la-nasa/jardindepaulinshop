@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Jardin de Paulin — Boutique beauté & lingerie (Version immersive)</title>
+  <meta name="description" content="Jardin de Paulin — Boutique immersive de produits de beauté, lingerie, parfums et accessoires. Site ultra-animé, responsive, SEO optimisé. Commandes envoyées par email (Formspree / mailto)." />
+  <meta name="keywords" content="beauté, cosmétique, lingerie, parfums, soins, boutique, Douala, FCFA" />
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- GSAP + ScrollTrigger for advanced animations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+  <!-- Feather icons -->
+  <script src="https://unpkg.com/feather-icons"></script>
+  <!-- Lottie -->
+  <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+
+  <style>
+    :root{
+      --accent-pink:#ff6fa3;
+      --accent-gold:#f6c85f;
+      --accent-cyan:#5eead4;
+      --bg:#0f1724;
+      --muted:#6b7280;
+    }
+    html,body{height:100%}
+    body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Arial;margin:0;background:linear-gradient(180deg,#fff 0%,#fbfbfd 100%);color:#0b1220;overflow-x:hidden}
+
+    /* Top progress bar */
+    #progress{position:fixed;left:0;top:0;height:4px;background:linear-gradient(90deg,var(--accent-pink),var(--accent-gold));width:0;z-index:60}
+
+    /* Custom cursor */
+    .cursor, .cursor-follower{position:fixed;left:0;top:0;pointer-events:none;z-index:9999;border-radius:999px;}
+    .cursor{width:8px;height:8px;background:rgba(11,18,32,0.95);transform:translate(-50%,-50%)}
+    .cursor-follower{width:36px;height:36px;border:2px solid rgba(255,111,163,0.18);transform:translate(-50%,-50%);backdrop-filter:blur(2px)}
+
+    /* Smooth animated background */
+    .bg-sheen{background:linear-gradient(120deg, rgba(255,111,163,0.06), rgba(96,165,250,0.04));background-size:200% 200%;animation:shiftBg 12s linear infinite}
+    @keyframes shiftBg{0%{background-position:0 50%}50%{background-position:100% 50%}100%{background-position:0 50%}}
+
+    /* Hero neon & mask reveal */
+    .neon-title{background:linear-gradient(90deg,var(--accent-pink),var(--accent-gold));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 8px 36px rgba(255,111,163,0.08))}
+    .hero-mask{position:relative;overflow:hidden}
+    .hero-mask::after{content:'';position:absolute;left:-30%;top:0;width:30%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.14),transparent);transform:skewX(-18deg);animation:shine 3.6s linear infinite}
+    @keyframes shine{0%{left:-30%}100%{left:130%}}
+
+    /* Fancy navbar underline */
+    nav a{position:relative}
+    nav a::after{content:'';position:absolute;left:0;bottom:-8px;height:3px;width:0;background:linear-gradient(90deg,var(--accent-pink),var(--accent-gold));transition:width .28s cubic-bezier(.2,.9,.2,1)}
+    nav a:hover::after{width:100%}
+
+    /* Shapes */
+    .shape{position:absolute;border-radius:999px;mix-blend-mode:screen;filter:blur(44px);opacity:0.14;z-index:0}
+    .shape.a{width:420px;height:420px;background:linear-gradient(120deg,var(--accent-pink),var(--accent-cyan));left:-120px;top:-80px}
+    .shape.b{width:320px;height:320px;background:linear-gradient(120deg,#ffd5e6,#fff1d0);right:-80px;bottom:-60px}
+
+    /* Product card */
+    .product-card{will-change:transform,filter}
+    .product-card img{transition:transform .8s cubic-bezier(.2,.9,.2,1)}
+    .product-card:hover img{transform:scale(1.06) rotate(-1deg)}
+
+    /* Modal backdrop */
+    .modal-backdrop{background:linear-gradient(rgba(2,6,23,0.5), rgba(2,6,23,0.5))}
+
+    /* Button styles */
+    .btn-primary{background:linear-gradient(90deg,var(--accent-pink),var(--accent-gold));color:#fff}
+    .btn-outline{border:2px solid rgba(11,18,32,0.06)}
+
+    /* Split highlight */
+    .split-cta{display:inline-block;background:linear-gradient(90deg,rgba(255,111,163,0.12),rgba(246,200,95,0.08));padding:6px 12px;border-radius:999px}
+
+    /* waves */
+    .wave-svg{display:block}
+
+    /* Responsive tweaks */
+    @media (max-width:640px){ .shape{display:none} }
+  </style>
+</head>
+<body>
+
+  <div id="progress" aria-hidden="true"></div>
+  <!-- Custom cursor -->
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-follower" id="cursorF"></div>
+
+  <!-- Particles (canvas) -->
+  <div id="particles" aria-hidden="true" style="position:fixed;inset:0;z-index:0;pointer-events:none"></div>
+
+  <!-- Header -->
+  <header class="fixed w-full z-50 top-0">
+    <nav id="mainNav" class="max-w-7xl mx-auto flex items-center justify-between p-4 md:p-6 bg-white/80 backdrop-blur rounded-b-2xl shadow-md z-40">
+      <div class="flex items-center gap-4">
+        <div class="bg-black text-white rounded-lg px-3 py-2 font-extrabold tracking-wider">JARDIN<br/>DE PAULIN</div>
+        <div class="hidden md:block text-sm text-gray-600">Beauté • Lingerie • Soins • Parfums</div>
+      </div>
+      <div class="hidden md:flex items-center gap-6">
+        <a href="#home" class="text-sm">Accueil</a>
+        <a href="#collections" class="text-sm">Collections</a>
+        <a href="#produits" class="text-sm">Produits</a>
+        <a href="#services" class="text-sm">Services</a>
+        <a href="#contact" class="text-sm">Contact</a>
+        <button id="cartBtn" aria-label="Ouvrir panier" class="relative px-3 py-2 rounded-full border flex items-center gap-2">
+          <span data-feather="shopping-cart" class="w-4 h-4"></span>
+          <span id="cartCount" class="text-sm">0</span>
+        </button>
+      </div>
+      <div class="md:hidden flex items-center gap-3">
+        <button id="mobileBtn" class="p-2 rounded-lg bg-white/40" aria-expanded="false">☰</button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Mobile menu -->
+  <div id="mobileMenu" class="fixed inset-0 z-40 hidden modal-backdrop py-20">
+    <div class="bg-white mx-6 p-6 rounded-xl shadow-2xl">
+      <a href="#home" class="block py-2">Accueil</a>
+      <a href="#collections" class="block py-2">Collections</a>
+      <a href="#produits" class="block py-2">Produits</a>
+      <a href="#services" class="block py-2">Services</a>
+      <a href="#contact" class="block py-2">Contact</a>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <section id="home" class="relative min-h-[84vh] flex items-center mt-20 overflow-hidden">
+    <div class="shape a" aria-hidden="true"></div>
+    <div class="shape b" aria-hidden="true"></div>
+
+    <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-8 items-center z-20">
+      <div class="space-y-6">
+        <div class="inline-flex items-center gap-3 bg-black text-white px-4 py-2 rounded-full shadow-lg">Boutique & Soins</div>
+        <div class="hero-mask">
+          <h1 class="text-4xl md:text-6xl font-extrabold leading-tight neon-title">JARDIN DE PAULIN — Sublimez chaque jour</h1>
+        </div>
+        <p class="text-gray-600 text-lg">Produits premium, lingerie élégante, parfums et routines de soin — une expérience pensée pour vous.</p>
+
+        <div class="flex gap-4">
+          <a href="#produits" id="discoverBtn" class="btn-primary px-6 py-3 rounded-full font-semibold shadow-lg transform hover:scale-105 transition">Découvrir</a>
+          <a href="#contact" class="btn-outline px-6 py-3 rounded-full border-black text-black transition">Nous contacter</a>
+        </div>
+
+        <div class="mt-6 flex items-center gap-6">
+          <lottie-player src="https://assets4.lottiefiles.com/private_files/lf30_jmgekfqg.json" background="transparent" speed="1" style="width:160px;height:80px;" loop autoplay></lottie-player>
+          <div class="p-4 bg-white rounded-xl shadow">
+            <div class="text-sm font-semibold">Notre promesse</div>
+            <div class="text-xs text-gray-500 mt-1">Produits sélectionnés — qualité & éthique.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="relative">
+        <div class="w-full hero-visual h-[520px] rounded-3xl overflow-hidden shadow-2xl tilt bg-black">
+          <div class="tilt-inner w-full h-full">
+            <img id="heroImg" src="https://images.unsplash.com/photo-1505682634904-d7c6e5f5a9f6?q=80&w=1600&auto=format&fit=crop" alt="Ambiance" class="w-full h-full object-cover" loading="lazy">
+          </div>
+        </div>
+        <!-- floating cards -->
+        <div class="absolute -left-8 -top-12 w-52 h-64 rounded-3xl overflow-hidden shadow-2xl transform rotate-6" style="will-change:transform;">
+          <img src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=800&auto=format&fit=crop" alt="Produit" class="w-full h-full object-cover" loading="lazy">
+        </div>
+        <div class="absolute right-0 -bottom-12 w-44 h-56 rounded-3xl overflow-hidden shadow-2xl transform -rotate-3" style="will-change:transform;">
+          <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=800&auto=format&fit=crop" alt="Produit" class="w-full h-full object-cover" loading="lazy">
+        </div>
+      </div>
+    </div>
+
+    <!-- SVG divider for smooth transition -->
+    <svg class="wave-svg absolute bottom-0 left-0 z-20" viewBox="0 0 1440 120" preserveAspectRatio="none" aria-hidden="true"><path fill="#fff" d="M0,40 C240,110 480,0 720,40 C960,80 1200,0 1440,40 L1440 140 L0 140 Z"></path></svg>
+  </section>
+
+  <!-- Collections -->
+  <section id="collections" class="py-12 z-10 relative bg-sheen">
+    <div class="max-w-7xl mx-auto px-6">
+      <h2 class="text-3xl font-bold">Collections</h2>
+      <p class="text-gray-600 mt-2">Explorez nos univers par catégorie.</p>
+
+      <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <a href="#produits" data-cat="Cosmétiques" class="group block rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition transform hover:-translate-y-2">
+          <div class="h-48 bg-cover bg-center" style="background-image:url('images/cos1.webp')"></div>
+          <div class="p-4 bg-white">
+            <h3 class="font-semibold">Cosmétiques & Maquillage</h3>
+            <p class="text-sm text-gray-500 mt-1">Couleurs, pigments et looks pour toutes les occasions.</p>
+          </div>
+        </a>
+
+        <a href="#produits" data-cat="Soins" class="group block rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition transform hover:-translate-y-2">
+          <div class="h-48 bg-cover bg-center" style="background-image:url('images/soin1.webp')"></div>
+          <div class="p-4 bg-white">
+            <h3 class="font-semibold">Soins & Skincare</h3>
+            <p class="text-sm text-gray-500 mt-1">Formules pour réparer, hydrater et protéger votre peau.</p>
+          </div>
+        </a>
+
+        <a href="#produits" data-cat="Lingerie" class="group block rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition transform hover:-translate-y-2">
+          <div class="h-48 bg-cover bg-center" style="background-image:url('images/ling3.webp')"></div>
+          <div class="p-4 bg-white">
+            <h3 class="font-semibold">Lingerie & Sous-vêtements</h3>
+            <p class="text-sm text-gray-500 mt-1">Confort, élégance et tailles inclusives.</p>
+          </div>
+        </a>
+
+        <a href="#produits" data-cat="Parfums" class="group block rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition transform hover:-translate-y-2">
+          <div class="h-48 bg-cover bg-center" style="background-image:url('images/par1.webp')"></div>
+          <div class="p-4 bg-white">
+            <h3 class="font-semibold">Parfums & Fragrances</h3>
+            <p class="text-sm text-gray-500 mt-1">Senteurs uniques pour chaque personnalité.</p>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Products -->
+  <section id="produits" class="py-12 bg-white z-10 relative">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-3xl font-bold">Produits</h2>
+          <p class="text-gray-600 mt-2">Filtrez, parcourez et découvrez les fiches produits détaillées.</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <label class="text-sm text-gray-500">Catégorie :</label>
+          <select id="categoryFilter" class="p-2 rounded-lg border">
+            <option value="all">Toutes</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="productsGrid" class="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </div>
+  </section>
+
+  <!-- Services -->
+  <section id="services" class="py-12 z-10 relative bg-sheen">
+    <div class="max-w-7xl mx-auto px-6">
+      <h2 class="text-3xl font-bold">Services</h2>
+      <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="p-6 rounded-xl shadow hover:shadow-2xl transition transform hover:-translate-y-2">
+          <h4 class="font-semibold">Emballage cadeau premium</h4>
+          <p class="text-sm text-gray-500 mt-2">Design soigné pour rendre chaque cadeau spécial.</p>
+        </div>
+        <div class="p-6 rounded-xl shadow hover:shadow-2xl transition transform hover:-translate-y-2">
+          <h4 class="font-semibold">Livraison express</h4>
+          <p class="text-sm text-gray-500 mt-2">Options de livraison en ville et points relais.</p>
+        </div>
+        <div class="p-6 rounded-xl shadow hover:shadow-2xl transition transform hover:-translate-y-2">
+          <h4 class="font-semibold">Conseil personnalisé</h4>
+          <p class="text-sm text-gray-500 mt-2">Diagnostic beauté et recommandations produits.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section id="contact" class="py-12 bg-white z-10 relative">
+    <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div>
+        <h3 class="text-2xl font-bold">Contactez-nous</h3>
+        <p class="text-gray-600 mt-2">Une commande spéciale ? Un conseil produit ?</p>
+        <p class="mt-6 text-sm"><strong>Téléphone:</strong> +237 699 929 180</p>
+        <p class="text-sm"><strong>Adresse:</strong> Palais de justice, Makepe, Douala</p>
+      </div>
+
+      <!-- Formspree + mailto fallback -->
+      <form id="contactForm" class="space-y-4 p-6 bg-white rounded-2xl shadow" onsubmit="return submitContact(event)">
+        <input id="c_name" name="name" type="text" placeholder="Nom" class="w-full p-3 rounded-lg border" required>
+        <input id="c_email" name="email" type="email" placeholder="Email" class="w-full p-3 rounded-lg border" required>
+        <textarea id="c_message" name="message" placeholder="Message" class="w-full p-3 rounded-lg border h-28" required></textarea>
+        <div class="flex justify-end">
+          <button class="px-5 py-3 rounded-full bg-black text-white ripple">Envoyer</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-black text-white py-8 z-10 relative">
+    <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div>
+        <div class="font-bold">JARDIN DE PAULIN</div>
+        <p class="text-sm text-gray-300 mt-2">Boutique de produits de beauté, lingerie et accessoires.</p>
+      </div>
+      <div>
+        <div class="font-semibold">Liens</div>
+        <ul class="text-sm mt-2 text-gray-300">
+          <li class="py-1"><a href="#produits">Produits</a></li>
+          <li class="py-1"><a href="#services">Services</a></li>
+          <li class="py-1"><a href="#contact">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="font-semibold">Suivez-nous</div>
+        <div class="flex gap-3 mt-2">
+          <a href="#" class="text-gray-300">Instagram</a>
+          <a href="#" class="text-gray-300">Facebook</a>
+          <a href="#" class="text-gray-300">WhatsApp</a>
+        </div>
+      </div>
+    </div>
+    <div class="text-center text-sm text-gray-400 mt-6">© <span id="year"></span> Jardin de Paulin — Tous droits réservés</div>
+  </footer>
+
+  <!-- Product Modal -->
+  <div id="productModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full p-6 relative">
+      <button id="closeModal" class="absolute right-4 top-4 p-2 rounded-full">✕</button>
+      <div id="modalInner"></div>
+    </div>
+  </div>
+
+  <!-- Cart Drawer -->
+  <aside id="cartDrawer" class="fixed right-4 top-24 w-96 bg-white rounded-2xl shadow-xl p-4 z-50 hidden">
+    <h4 class="font-semibold">Panier</h4>
+    <div id="cartItems" class="mt-3 space-y-3 max-h-64 overflow-auto"></div>
+    <div class="mt-4 flex items-center justify-between"><div class="font-bold">Total</div><div id="cartTotal" class="font-bold">0 FCFA</div></div>
+    <div class="mt-4"><button id="checkoutBtn" class="w-full px-4 py-2 rounded-full btn-primary">Commander</button></div>
+  </aside>
+
+  <!-- Checkout Modal -->
+  <div id="checkoutModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-6 relative">
+      <button id="closeCheckout" class="absolute right-4 top-4 p-2 rounded-full">✕</button>
+      <h3 class="text-xl font-bold">Finaliser la commande</h3>
+      <p class="text-sm text-gray-600">Remplissez vos informations — nous vous enverrons un email pour confirmer.</p>
+      <form id="checkoutForm" class="mt-4 space-y-3" onsubmit="return submitOrder(event)">
+        <input id="o_name" name="name" type="text" placeholder="Nom complet" class="w-full p-3 rounded-lg border" required>
+        <input id="o_email" name="email" type="email" placeholder="Email" class="w-full p-3 rounded-lg border" required>
+        <input id="o_phone" name="phone" type="text" placeholder="Téléphone" class="w-full p-3 rounded-lg border" required>
+        <input id="o_address" name="address" type="text" placeholder="Adresse de livraison" class="w-full p-3 rounded-lg border" required>
+        <div class="flex justify-end gap-3">
+          <button type="button" id="cancelOrder" class="px-4 py-2 rounded-full btn-outline">Annuler</button>
+          <button type="submit" class="px-4 py-2 rounded-full btn-primary">Envoyer la commande</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // CONFIG
+    const FORMSPREE_ENDPOINT = 'https://formspree.io/f/mnnbjbyq'; // replace
+    const OWNER_EMAIL = 'tmdevpdo@gmail.com'; // replace
+
+    // Init feather icons & year
+    feather.replace();
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Progress bar update
+    window.addEventListener('scroll', ()=>{
+      const h = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = (window.scrollY / h) * 100; document.getElementById('progress').style.width = pct+'%';
+      // shrink nav on scroll
+      const nav = document.getElementById('mainNav'); if(window.scrollY>40) nav.style.backdropFilter='blur(8px)'; else nav.style.backdropFilter='blur(0px)';
+    });
+
+    // Cursor behavior
+    const cursor = document.getElementById('cursor'); const cursorF = document.getElementById('cursorF');
+    let cx=0,cy=0,fx=0,fy=0;
+    window.addEventListener('mousemove',(e)=>{ cx=e.clientX; cy=e.clientY; cursor.style.left=cx+'px'; cursor.style.top=cy+'px'; });
+    function follow(){ fx += (cx - fx) * 0.14; fy += (cy - fy) * 0.14; cursorF.style.left = fx+'px'; cursorF.style.top = fy+'px'; requestAnimationFrame(follow);} follow();
+    // hide native cursor on desktop
+    if(window.matchMedia('(min-width:640px)').matches) document.body.style.cursor='none';
+
+    // Particles canvas (subtle) - improved colors
+    (function(){ const container=document.getElementById('particles'); const canvas=document.createElement('canvas'); container.appendChild(canvas); const ctx=canvas.getContext('2d'); let w,h,parts=[]; function resize(){ w=canvas.width=window.innerWidth; h=canvas.height=window.innerHeight; parts = Array.from({length: Math.round((w*h)/120000)}, ()=>({x:Math.random()*w,y:Math.random()*h,r:1+Math.random()*3,dx:(Math.random()-0.5)/1.6,dy:(Math.random()-0.5)/1.6,color:['rgba(255,111,163,0.08)','rgba(246,200,95,0.06)','rgba(94,234,212,0.04)'][Math.floor(Math.random()*3)]})); }
+      function draw(){ ctx.clearRect(0,0,w,h); parts.forEach(p=>{ p.x+=p.dx; p.y+=p.dy; if(p.x<0)p.x=w; if(p.x>w)p.x=0; if(p.y<0)p.y=h; if(p.y>h)p.y=0; ctx.beginPath(); ctx.fillStyle=p.color; ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill(); }); requestAnimationFrame(draw); }
+      window.addEventListener('resize', resize); resize(); draw(); })();
+
+    // Mobile menu toggle
+    document.getElementById('mobileBtn').addEventListener('click', ()=> document.getElementById('mobileMenu').classList.toggle('hidden'));
+
+    // HERO - tilt
+    const hero = document.querySelector('.tilt'); if(hero){ hero.addEventListener('mousemove',(e)=>{ const r=hero.getBoundingClientRect(); const x=(e.clientX-r.left)/r.width-0.5; const y=(e.clientY-r.top)/r.height-0.5; hero.querySelector('.tilt-inner').style.transform = `rotateY(${x*8}deg) rotateX(${y*-6}deg) scale(1.03)`; document.querySelectorAll('.shape.a,.shape.b').forEach((s,i)=> s.style.transform = `translate(${x*18*(i+1)}px, ${y*10*(i+1)}px)`); }); hero.addEventListener('mouseleave', ()=>{ hero.querySelector('.tilt-inner').style.transform='rotateY(0) rotateX(0) scale(1)'; document.querySelectorAll('.shape.a,.shape.b').forEach(s=> s.style.transform='translate(0,0)'); }); }
+
+    // GSAP animations
+    gsap.registerPlugin(ScrollTrigger);
+    gsap.from('#home .inline-flex',{y:20,opacity:0,duration:0.6});
+    gsap.from('#home h1',{y:20,opacity:0,duration:0.9,delay:0.1});
+    gsap.from('#home p',{y:10,opacity:0,duration:0.6,delay:0.15});
+    gsap.utils.toArray('#collections .group').forEach((el,i)=> gsap.from(el,{y:24,opacity:0,duration:0.7,delay:i*0.06,ease:'power3.out'}));
+
+    // ===== PRODUCTS DATA (same as before, but we add more micro-animations) =====
+    const PRODUCTS = [
+      {id:'p1',cat:'Cosmétiques',name:'Palette Éclat',price:3500,desc:'Palette de 12 couleurs hautement pigmentées, fini mat et satiné. Idéale pour looks de jour et de soirée. Inclut pinceau duo.',imgs:['images/cos1.webp','images/cos2.webp']},
+      {id:'p2',cat:'Soins',name:'Sérum Hydratant',price:6800,desc:"Sérum concentré en acide hyaluronique pour une hydratation intense et une peau repulpée. Convient à tous types de peau, test dermatologique.",imgs:['images/soin1.webp']},
+      {id:'p3',cat:'Lingerie',name:'Ensemble Dentelle',price:8900,desc:'Ensemble en dentelle fine, doublure douce et maintien confortable. Tailles: S, M, L, XL. Entretien délicat recommandé.',imgs:['images/ling1.webp']},
+      {id:'p4',cat:'Parfums',name:'Parfum Signature',price:12000,desc:'Fragrance florale-boisée aux notes de jasmin, oud et ambre. Format 50ml. Tenue longue durée.',imgs:['images/par1.webp']},
+      {id:'p5',cat:'Soins',name:'Gommage Doux',price:4200,desc:"Gommage doux à base d'extraits naturels pour éliminer les peaux mortes et lisser le grain de peau. Convient aux peaux sensibles.",imgs:['images/soin2.webp']},
+      {id:'p6',cat:'Soins',name:'Routine Nuit',price:9500,desc:'Pack nuit: sérum régénérant + crème réparatrice pour une peau reposée au réveil. Testé sous contrôle dermatologique.',imgs:['images/soin3.webp']},
+      {id:'p7',cat:'Cosmétiques',name:'Mascara Volume',price:2500,desc:'Mascara volumisant à tenue longue durée pour un effet cils faux. Sans parabènes.',imgs:['images/cos3.webp']},
+      {id:'p8',cat:'Parfums',name:'Parfum Découverte',price:18000,desc:'Coffret 3 miniatures — parfait pour offrir ou tester nos fragrances.',imgs:['images/par4.webp']},
+      {id:'p9',cat:'Lingerie',name:'Lingerie Confort',price:4500,desc:'Lingerie en coton doux, coupe moderne, élastique confortable. Lavable en machine.',imgs:['images/ling7.webp']},
+      {id:'p10',cat:'Accessoires',name:'Trousse Maquillage',price:3200,desc:'Trousse zippée résistante, dimensions pratiques pour voyage. Matière imperméable.',imgs:['images/acc2']},
+      {id:'p11',cat:'Cosmétiques',name:'Rouge à Lèvres Satin',price:2100,desc:'Pigmentation riche, fini satiné, tenue longue durée. Disponible en 8 teintes.',imgs:['images/cos7.webp']},
+      {id:'p12',cat:'Accessoires',name:'Brosse Nettoyante Visage',price:7600,desc:'Brosse douce pour exfoliation et nettoyage en profondeur. Batterie longue durée.',imgs:['images/acc1.webp']}
+    ];
+
+    // Build category filter & render
+    const cats = ['all', ...new Set(PRODUCTS.map(p=>p.cat))]; const catSelect = document.getElementById('categoryFilter'); cats.forEach(c=>{ const opt=document.createElement('option'); opt.value=c; opt.textContent=c; catSelect.appendChild(opt); });
+    const grid = document.getElementById('productsGrid');
+    function renderProducts(filter='all'){
+      grid.innerHTML=''; const data = PRODUCTS.filter(p=> filter==='all' || p.cat===filter);
+      data.forEach((p,i)=>{
+        const card = document.createElement('article'); card.className='product-card bg-white rounded-2xl p-4 shadow-lg hover:shadow-2xl transition tilt';
+        card.innerHTML = `
+          <div class='relative overflow-hidden rounded-xl h-56'>
+            <img src='${p.imgs[0]}?q=80&w=1200' alt='${p.name}' class='w-full h-full object-cover' loading='lazy'>
+            <div class='absolute left-3 top-3 bg-white/90 text-[11px] px-3 py-1 rounded-full font-semibold shadow-sm'>${p.cat}</div>
+            <div class='absolute right-3 bottom-3 bg-black/70 text-white px-3 py-1 rounded-full text-xs'>Voir +</div>
+          </div>
+          <h3 class='font-semibold mt-3'>${p.name}</h3>
+          <p class='text-sm text-gray-500 mt-2 line-clamp-2'>${p.desc}</p>
+          <div class='mt-4 flex items-center justify-between'>
+            <div class='font-bold'>${p.price.toLocaleString()} FCFA</div>
+            <div class='flex gap-2'>
+              <button class='viewBtn px-3 py-1 rounded-lg border' data-id='${p.id}'>Voir</button>
+              <button class='addBtn ripple px-3 py-1 rounded-lg btn-primary' data-id='${p.id}'>Ajouter</button>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+        gsap.from(card,{opacity:0,y:28,scale:0.98,delay:i*0.06,duration:0.8,ease:'power3.out'});
+        card.addEventListener('mousemove', (ev)=>{ const r=card.getBoundingClientRect(); const px=(ev.clientX-r.left)/r.width - 0.5; const py=(ev.clientY-r.top)/r.height - 0.5; gsap.to(card, {rotationY: px*6, rotationX: py*-4, transformPerspective:800, transformOrigin:'center', duration:0.25}); });
+        card.addEventListener('mouseleave', ()=> gsap.to(card,{rotationY:0,rotationX:0,duration:0.4,ease:'power3.out'}));
+      });
+      attachProductButtons();
+    }
+    renderProducts(); catSelect.addEventListener('change', ()=> renderProducts(catSelect.value==='all'?'all':catSelect.value));
+    document.querySelectorAll('[data-cat]').forEach(el=> el.addEventListener('click', ()=>{ const c=el.dataset.cat; document.getElementById('categoryFilter').value=c; renderProducts(c); window.location.hash='produits'; }));
+
+    // Modal
+    const modal = document.getElementById('productModal'); const modalInner = document.getElementById('modalInner');
+    function openModal(id){ const p = PRODUCTS.find(x=>x.id===id);
+      modalInner.innerHTML = `
+        <div class='grid md:grid-cols-2 gap-6'>
+          <div>
+            <div class='relative rounded-xl overflow-hidden h-80'>
+              <img id='modalMainImg' src='${p.imgs[0]}?q=80&w=1200' class='w-full h-full object-cover' alt='${p.name}'>
+            </div>
+            <div class='mt-3 flex gap-2'>${p.imgs.map((_,i)=>`<div class='gallery-dot ${i===0? 'active':''}' data-idx='${i}' style='width:12px;height:12px;border-radius:999px;background:${i===0? 'var(--accent-pink)':'#e5e7eb'};cursor:pointer;'></div>`).join('')}</div>
+          </div>
+          <div>
+            <h3 class='text-2xl font-bold'>${p.name}</h3>
+            <div class='text-sm text-gray-500 mt-2'>${p.cat}</div>
+            <div class='mt-4 text-gray-700'>${p.desc}</div>
+            <div class='mt-6 font-bold text-xl'>${p.price.toLocaleString()} FCFA</div>
+            <div class='mt-6 flex gap-3'>
+              <button id='modalAdd' class='px-4 py-2 rounded-full btn-primary'>Ajouter au panier</button>
+              <button id='modalClose' class='px-4 py-2 rounded-full btn-outline'>Fermer</button>
+            </div>
+          </div>
+        </div>
+      `;
+      modal.classList.remove('hidden'); gsap.from('#productModal .bg-white',{scale:0.96,opacity:0,duration:0.45,ease:'back.out(1.2)'});
+      modal.querySelectorAll('.gallery-dot').forEach(dot=> dot.addEventListener('click', ()=>{ const idx=dot.dataset.idx; modal.querySelectorAll('.gallery-dot').forEach(d=>d.style.background='#e5e7eb'); dot.style.background='var(--accent-pink)'; document.getElementById('modalMainImg').src = p.imgs[idx] + '?q=80&w=1200'; }));
+      document.getElementById('modalClose').addEventListener('click', ()=> modal.classList.add('hidden'));
+      document.getElementById('modalAdd').addEventListener('click', ()=>{ addToCart(p.id); modal.classList.add('hidden'); });
+    }
+    document.getElementById('closeModal').addEventListener('click', ()=> modal.classList.add('hidden'));
+
+    // Cart
+    const cart = JSON.parse(localStorage.getItem('jdp_cart')||'{}');
+    function saveCart(){ localStorage.setItem('jdp_cart', JSON.stringify(cart)); renderCart(); }
+    function addToCart(id){ cart[id] = (cart[id]||0)+1; saveCart(); animateCartAdd(); }
+    function removeFromCart(id){ if(cart[id]){ cart[id]--; if(cart[id]<=0) delete cart[id]; saveCart(); }}
+    function renderCart(){ const container=document.getElementById('cartItems'); container.innerHTML=''; let total=0; let count=0; Object.keys(cart).forEach(id=>{ const p=PRODUCTS.find(x=>x.id===id); if(!p) return; const qty=cart[id]; count+=qty; total+=p.price*qty; const div=document.createElement('div'); div.className='flex items-center gap-3'; div.innerHTML=`<img src='${p.imgs[0]}?q=60&w=120' class='w-12 h-12 object-cover rounded-md'><div class='flex-1'><div class='font-semibold'>${p.name}</div><div class='text-sm text-gray-500'>${p.price} FCFA x ${qty}</div></div><div class='flex flex-col gap-1'><button class='text-sm text-[var(--accent-pink)] remove' data-id='${id}'>-</button><button class='text-sm text-[var(--accent-pink)] add' data-id='${id}'>+</button></div>`; container.appendChild(div); }); document.getElementById('cartTotal').textContent = total.toLocaleString() + ' FCFA'; document.getElementById('cartCount').textContent = Object.values(cart).reduce((a,b)=>a+b,0);
+      container.querySelectorAll('.remove').forEach(btn=>btn.addEventListener('click', ()=> removeFromCart(btn.dataset.id)));
+      container.querySelectorAll('.add').forEach(btn=>btn.addEventListener('click', ()=> addToCart(btn.dataset.id)));
+    }
+    renderCart();
+
+    // Attach product buttons
+    function attachProductButtons(){ document.querySelectorAll('.viewBtn').forEach(b=> b.addEventListener('click', e=> openModal(e.currentTarget.dataset.id))); document.querySelectorAll('.addBtn').forEach(b=> b.addEventListener('click', function(e){ const id=e.currentTarget.dataset.id; const rect=this.getBoundingClientRect(); const span=document.createElement('span'); span.style.left=(e.clientX-rect.left-10)+'px'; span.style.top=(e.clientY-rect.top-10)+'px'; this.appendChild(span); setTimeout(()=> span.remove(),600); addToCart(id); })); }
+
+    // Cart drawer toggle
+    document.getElementById('cartBtn').addEventListener('click', ()=> document.getElementById('cartDrawer').classList.toggle('hidden'));
+    function animateCartAdd(){ gsap.fromTo('#cartCount',{scale:0.6,rotation:-20},{scale:1,rotation:0,duration:0.6,ease:'elastic.out(1,0.6)'}); gsap.fromTo('#cartDrawer',{x:80,opacity:0},{x:0,opacity:1,duration:0.4,ease:'power2.out'}); }
+
+    // Checkout
+    document.getElementById('checkoutBtn').addEventListener('click', ()=>{ if(Object.keys(cart).length===0){ alert('Votre panier est vide'); return; } document.getElementById('checkoutModal').classList.remove('hidden'); });
+    document.getElementById('closeCheckout').addEventListener('click', ()=> document.getElementById('checkoutModal').classList.add('hidden'));
+    document.getElementById('cancelOrder').addEventListener('click', ()=> document.getElementById('checkoutModal').classList.add('hidden'));
+
+    // Contact form via Formspree with mailto fallback
+    async function submitContact(e){ e.preventDefault(); const name=document.getElementById('c_name').value; const email=document.getElementById('c_email').value; const message=document.getElementById('c_message').value; const payload={name,email,message};
+      try{ if(!FORMSPREE_ENDPOINT.includes('https://formspree.io/f/mnnbjbyq')) throw new Error('No formspree'); const res = await fetch(FORMSPREE_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(payload)}); if(res.ok){ alert('Merci ! Votre message a été envoyé.'); e.target.reset(); } else throw new Error('send fail'); }
+      catch(err){ const subject=encodeURIComponent('Contact - Jardin de Paulin: '+name); const body=encodeURIComponent(`Nom: ${name}
+Email: ${email}
+
+${message}`); window.open(`mailto:${OWNER_EMAIL}?subject=${subject}&body=${body}`,'_blank'); }
+    }
+
+    // Submit order - sends via Formspree or mailto fallback
+    async function submitOrder(e){ e.preventDefault(); const name=document.getElementById('o_name').value; const email=document.getElementById('o_email').value; const phone=document.getElementById('o_phone').value; const address=document.getElementById('o_address').value; const items=Object.keys(cart).map(id=>{ const p=PRODUCTS.find(x=>x.id===id); return {id:p.id,name:p.name,price:p.price,qty:cart[id]}; }); if(items.length===0){ alert('Panier vide'); return; } const order={customer:{name,email,phone,address},items,total: items.reduce((s,i)=>s+i.price*i.qty,0)};
+      try{ if(!FORMSPREE_ENDPOINT.includes('https://formspree.io/f/mnnbjbyq')) throw new Error('No formspree'); const res = await fetch(FORMSPREE_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({subject:'Nouvelle commande - Jardin de Paulin',order})}); if(res.ok){ alert('Commande envoyée ! Nous vous contacterons bientôt.'); for(const k in cart) delete cart[k]; saveCart(); document.getElementById('checkoutModal').classList.add('hidden'); document.getElementById('cartDrawer').classList.add('hidden'); } else throw new Error('send fail'); }
+      catch(err){ const subject=encodeURIComponent('Nouvelle commande - Jardin de Paulin'); let bodyText=`Commande de: ${name} (Email: ${email})
+Téléphone: ${phone}
+Adresse: ${address}
+
+Produits:
+`; items.forEach(it=> bodyText += `- ${it.name} x${it.qty} => ${it.price} FCFA
+`); bodyText += `
+Total: ${order.total} FCFA`; window.open(`mailto:${OWNER_EMAIL}?subject=${subject}&body=${encodeURIComponent(bodyText)}`,'_blank'); alert('Formspree non configuré — client mail ouvert pour envoyer la commande.'); for(const k in cart) delete cart[k]; saveCart(); document.getElementById('checkoutModal').classList.add('hidden'); document.getElementById('cartDrawer').classList.add('hidden'); }
+      return false; }
+
+    // Accessibility: ESC
+    document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ document.getElementById('productModal').classList.add('hidden'); document.getElementById('checkoutModal').classList.add('hidden'); document.getElementById('cartDrawer').classList.add('hidden'); document.getElementById('mobileMenu').classList.add('hidden'); } });
+
+    // Initial attach
+    attachProductButtons();
+
+  </script>
+
+
+</body>
+</html>
